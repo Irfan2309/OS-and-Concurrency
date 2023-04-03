@@ -19,13 +19,23 @@ public class DrillLoginManager implements Manager {
 	//adding a Reentrant lock
 	private final ReentrantLock lock = new ReentrantLock();
 	
+	//adding a condition variable to block workers until a team request needs the worker
+	private final Condition workerCondition = lock.newCondition();
+	
+	//making a map that will store all the team that makes the request and their worker requirements
+	//the map stores the team name as the key and the value is another map that stores the worker role and the number of workers
+	private final Map<String, Map<String, Integer>> requestsMade = new HashMap<>();
+	
 	@Override
 	public void smallTeamRequest(Map<String, Integer> team) {
 		
 		//lock protection
 		lock.lock();
 		try {
-			// TODO Your code here
+			//add the request to the map
+			requestsMade.put(null, team);
+			//unblock a worker
+			workerCondition.signal();
 		}
 		finally {
 			lock.unlock();
@@ -38,10 +48,10 @@ public class DrillLoginManager implements Manager {
 		//lock protection
 		lock.lock();
 		try {
-			// TODO Your code here	
-			//e.g.
-			PriavateClass1 p = new PriavateClass1();
-			p.myMethod();
+			//add the request to the map
+			requestsMade.put(teamName, team);
+			//unblock a worker
+			workerCondition.signal();
 		}
 		finally {
 			lock.unlock();
