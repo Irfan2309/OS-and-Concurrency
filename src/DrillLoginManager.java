@@ -22,8 +22,8 @@ public class DrillLoginManager implements Manager {
 	//adding a condition variable to block workers until a team request needs the worker
 	private final Condition workerCondition = lock.newCondition();
 	
-	//making a map that will store all the team that makes the request and their worker requirements
-	//the map stores the team name as the key and the value is another map that stores the worker role and the number of workers
+	/* making a map that will store all the team that makes the request and their worker requirements 
+	 * the map stores the team name as the key and the value is another map that stores the worker role and the number of workers */
 	private final Map<String, Map<String, Integer>> requestsMade = new HashMap<>();
 	
 	@Override
@@ -64,10 +64,11 @@ public class DrillLoginManager implements Manager {
 		//lock protection
 		lock.lock();
 		try {
-			// TODO Your code here	
-			//e.g.
-			myMethod();
-			return null; //Note that this return string is ignored by all UR except UR6
+			/* check if worker is needed in any requests (while?)
+			 * if yes, then add them to the team (decrement from the role count needed in the team?)			
+			 * if no, block using await (will be woken up the signals in the request methods)
+			 * */
+			return null;
 		}
 		finally {
 			lock.unlock();
@@ -75,13 +76,8 @@ public class DrillLoginManager implements Manager {
 	}
 	
 	//Note that you may add inner classes and methods to this file as shown below:
-	private class PriavateClass1 {
-		void myMethod() {};
-		// TODO Your code here	
-	}
-	
-	void myMethod() {
-		// TODO Your code here	
-	}
-
+	private class proceedRequest {
+		/*once the role requirement is fulfilled, the thread should proceed 
+		 * i.e. the request should no longer be available (remove from map requestsMade) */
+	}	
 }
