@@ -16,25 +16,52 @@ import java.util.HashMap;
 //otherwise the compilation with the Test classes will fail
 public class DrillLoginManager implements Manager {
 
+	//adding a Reentrant lock
+	private final ReentrantLock lock = new ReentrantLock();
+	
 	@Override
 	public void smallTeamRequest(Map<String, Integer> team) {
-		// TODO Your code here		
+		
+		//lock protection
+		lock.lock();
+		try {
+			// TODO Your code here
+		}
+		finally {
+			lock.unlock();
+		}	
 	}
 
 	@Override
 	public void drillerRequest(String teamName, Map<String, Integer> team) {
-		// TODO Your code here	
-		//e.g.
-		PriavateClass1 p = new PriavateClass1();
-		p.myMethod();
+		
+		//lock protection
+		lock.lock();
+		try {
+			// TODO Your code here	
+			//e.g.
+			PriavateClass1 p = new PriavateClass1();
+			p.myMethod();
+		}
+		finally {
+			lock.unlock();
+		}
 	}
 
 	@Override
 	public String workerLogin(String role) {
-		// TODO Your code here	
-		//e.g.
-		myMethod();
-		return null; //Note that this return string is ignored by all UR except UR6
+		
+		//lock protection
+		lock.lock();
+		try {
+			// TODO Your code here	
+			//e.g.
+			myMethod();
+			return null; //Note that this return string is ignored by all UR except UR6
+		}
+		finally {
+			lock.unlock();
+		}	
 	}
 	
 	//Note that you may add inner classes and methods to this file as shown below:
