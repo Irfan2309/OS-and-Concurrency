@@ -28,6 +28,10 @@ public class DrillLoginManager implements Manager {
 	 * Using LinkedHashMap to have an order in which the requests enter the map. (so we can use FIFO) */
 	private final Map<String, Map<String, Integer>> requestsMade = new LinkedHashMap<>();
 	
+	/* storing all the workers that log-in in a map. 
+	 * storing the role along with the number of workers that are logged in and ready to work*/
+	private final Map<String, Integer> availableWorkers = new HashMap<>();
+	
 	@Override
 	public void smallTeamRequest(Map<String, Integer> team) {
 		
@@ -67,9 +71,9 @@ public class DrillLoginManager implements Manager {
 		lock.lock();
 		try {
 			/* check if any requests are available (check requestsMade) 
-			 * check if worker is needed in any requests 
-			 * if yes, then add them to the team		
-			 * if no, block using await (will be woken up the signals in the request methods)
+			 * check if worker is needed in any requests (check in availableWorkers)
+			 * if yes, then add them to the team and remove worker from availableWorkers	
+			 * if no, block using await (will be woken up by the signals in the request methods)
 			 * */
 			return null;
 		}
