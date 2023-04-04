@@ -31,7 +31,7 @@ public class DrillLoginManager implements Manager {
 	
 	/* storing all the workers that log-in in a map. 
 	 * storing the role along with the number of workers that are logged in and ready to work*/
-	private final Map<String, Integer> availableWorkers = new HashMap<>();
+	private final HashMap<String, Integer> availableWorkers = new HashMap<>();
 	
 	@Override
 	public void smallTeamRequest(Map<String, Integer> team) {
@@ -94,11 +94,8 @@ public class DrillLoginManager implements Manager {
 				String teamName = null;
 				Map<String, Integer> team = null;
 				
-				//use an iterator to iterate through the requests
-				Iterator<Map.Entry<String, Map<String, Integer>>> iterator = requestsMade.entrySet().iterator();
-				while (iterator.hasNext()) {
-					Map.Entry<String, Map<String, Integer>> iteration = iterator.next();
-					
+				//use a for loop to iterate through the requests
+				for (Map.Entry<String, Map<String, Integer>> iteration : requestsMade.entrySet()) {
 					//store the current iterations team
 					Map<String, Integer> currTeam = iteration.getValue();
 					
@@ -109,8 +106,11 @@ public class DrillLoginManager implements Manager {
 						break;
 					}
 				}
-				//TODO : Add the worker to the team
-				return null;
+				/* Add the worker to the team
+				 * decrement the number of workers needed for that role in the request
+				 * also remove the worker from available workers (similar decrement from role) */
+				team.put(role, team.get(role) - 1);
+				availableWorkers.put(role, availableWorkers.get(role) -1);
 			}	
 		}
 		finally {
