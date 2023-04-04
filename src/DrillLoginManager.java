@@ -92,7 +92,6 @@ public class DrillLoginManager implements Manager {
 			while (true) {
 				
 				String teamName = null;
-				Map<String, Integer> team = null;
 				
 				//use a for loop to iterate through the requests
 				for (Map.Entry<String, Map<String, Integer>> iteration : requestsMade.entrySet()) {
@@ -102,15 +101,23 @@ public class DrillLoginManager implements Manager {
 					//store the request information if the worker can be used for this team
 					if(currTeam.containsKey(role) && currTeam.get(role) > 0) {
 						teamName = iteration.getKey();
-						team = currTeam;
-						break;
+						
+						/* Add the worker to the team
+						 * decrement the number of workers needed for that role in the request
+						 * also remove the worker from available workers (similar decrement from role) */
+						currTeam.put(role, currTeam.get(role) - 1);
+						availableWorkers.put(role, availableWorkers.get(role) -1);
+						
+						//unblock a waiting worker
+						workerCondition.signal();
+						
+					}
+					//if the worker can't be used right now, block the worker
+					else
+					{
+						workerCondition.awaitUninterruptibly();
 					}
 				}
-				/* Add the worker to the team
-				 * decrement the number of workers needed for that role in the request
-				 * also remove the worker from available workers (similar decrement from role) */
-				team.put(role, team.get(role) - 1);
-				availableWorkers.put(role, availableWorkers.get(role) -1);
 			}	
 		}
 		finally {
