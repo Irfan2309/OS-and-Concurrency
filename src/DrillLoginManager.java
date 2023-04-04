@@ -70,6 +70,18 @@ public class DrillLoginManager implements Manager {
 		//lock protection
 		lock.lock();
 		try {
+			/* adding worker to the map
+			 * if the role is already in the map, update the count of workers for that role
+			 * else, create a key-value for that role and set count to 1 */
+			if (availableWorkers.containsKey(role)) {
+				
+				int workerCount = availableWorkers.get(role);
+				availableWorkers.put(role, workerCount + 1);
+			}
+			else {
+				availableWorkers.put(role, 1);
+			}
+			
 			/* check if any requests are available (check requestsMade) 
 			 * check if worker is needed in any requests (check in availableWorkers)
 			 * if yes, then add them to the team and remove worker from availableWorkers	
