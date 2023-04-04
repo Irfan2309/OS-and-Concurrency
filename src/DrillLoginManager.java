@@ -10,6 +10,7 @@ import java.util.concurrent.locks.Condition; //Note that the 'notifyAll' method 
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 
 
@@ -26,7 +27,7 @@ public class DrillLoginManager implements Manager {
 	/* making a map that will store all the team that makes the request and their worker requirements 
 	 * the map stores the team name as the key and the value is another map that stores the worker role and the number of workers 
 	 * Using LinkedHashMap to have an order in which the requests enter the map. (so we can use FIFO) */
-	private final Map<String, Map<String, Integer>> requestsMade = new LinkedHashMap<>();
+	private final LinkedHashMap<String, Map<String, Integer>> requestsMade = new LinkedHashMap<>();
 	
 	/* storing all the workers that log-in in a map. 
 	 * storing the role along with the number of workers that are logged in and ready to work*/
@@ -74,7 +75,6 @@ public class DrillLoginManager implements Manager {
 			 * if the role is already in the map, update the count of workers for that role
 			 * else, create a key-value for that role and set count to 1 */
 			if (availableWorkers.containsKey(role)) {
-				
 				int workerCount = availableWorkers.get(role);
 				availableWorkers.put(role, workerCount + 1);
 			}
@@ -82,12 +82,36 @@ public class DrillLoginManager implements Manager {
 				availableWorkers.put(role, 1);
 			}
 			
-			/* check if any requests are available (check requestsMade) 
-			 * check if worker is needed in any requests (check in availableWorkers)
-			 * if yes, then add them to the team and remove worker from availableWorkers	
-			 * if no, block using await (will be woken up by the signals in the request methods)
+			/* check 2 possible scenarios: 
+			 * if the request contains the needed role 
+			 * if the request has already fulfilled the role requirement
+			 * 
+			 * if scenarios are positive, then add the worker to the team and remove them from availableWorkers	
+			 * else use await. this will block the worker thread until a signal is called on it (use c.v. workerCondition)
 			 * */
-			return null;
+			while (true) {
+				
+				String teamName = null;
+				Map<String, Integer> team = null;
+				
+				//use an iterator to iterate through the requests
+				Iterator<Map.Entry<String, Map<String, Integer>>> iterator = requestsMade.entrySet().iterator();
+				while (iterator.hasNext()) {
+					Map.Entry<String, Map<String, Integer>> iteration = iterator.next();
+					
+					//store the current iterations team
+					Map<String, Integer> currTeam = iteration.getValue();
+					
+					//store the request information if the worker can be used for this team
+					if(currTeam.containsKey(role) && currTeam.get(role) > 0) {
+						teamName = iteration.getKey();
+						team = currTeam;
+						break;
+					}
+				}
+				//TODO : Add the worker to the team
+				return null;
+			}	
 		}
 		finally {
 			lock.unlock();
