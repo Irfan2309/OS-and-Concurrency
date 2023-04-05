@@ -32,7 +32,7 @@ public class DrillLoginManager implements Manager {
 	/* storing all the workers that log-in in a map. 
 	 * storing the role along with the number of workers that are logged in and ready to work*/
 	private final HashMap<String, Integer> availableWorkers = new HashMap<>();
-	
+		
 	@Override
 	public void smallTeamRequest(Map<String, Integer> team) {
 		
@@ -91,42 +91,58 @@ public class DrillLoginManager implements Manager {
 			 * */
 			while (true) {
 				
+				boolean canProceed = false;
 				String teamName = null;
-				
+				Map<String, Integer> team = null;
 				//use a for loop to iterate through the requests
 				for (Map.Entry<String, Map<String, Integer>> iteration : requestsMade.entrySet()) {
+					
 					//store the current iterations team
+					String currTeamName = iteration.getKey();
 					Map<String, Integer> currTeam = iteration.getValue();
 					
 					//store the request information if the worker can be used for this team
 					if(currTeam.containsKey(role) && currTeam.get(role) > 0) {
-						teamName = iteration.getKey();
-						
-						/* Add the worker to the team
-						 * decrement the number of workers needed for that role in the request
-						 * also remove the worker from available workers (similar decrement from role) */
-						currTeam.put(role, currTeam.get(role) - 1);
-						availableWorkers.put(role, availableWorkers.get(role) -1);
-						
-						//unblock a waiting worker
-						workerCondition.signal();
-						
+						teamName = currTeamName;
+						team = currTeam;
+						break;	
 					}
-					//if the worker can't be used right now, block the worker
-					else
-					{
-						workerCondition.awaitUninterruptibly();
+				}
+				if (team != null) {
+					/* Add the worker to the team
+					 * decrement the number of workers needed for that role in the request
+					 * also remove the worker from available workers (similar decrement from role) */
+					team.put(role, team.get(role) - 1);
+					availableWorkers.put(role, availableWorkers.get(role) -1);
+					
+					//check if adding this worker completed the team request, if so, proceed the request (remove it)
+					for (int count : team.values()) {
+						if (count != 0) {
+							canProceed = false;
+						}
+						else {
+							canProceed = true;
+						}
 					}
+					if (canProceed) {
+						//getting the head of the map
+						String head = requestsMade.keySet().iterator().next();
+						requestsMade.remove(head);
+					}
+					//unblock a waiting worker
+					workerCondition.signal();
+					
+					//return the team name as per requirements
+					return teamName;
+				}
+				else {
+					//if the team is null make the worker wait
+					workerCondition.awaitUninterruptibly();
 				}
 			}	
 		}
 		finally {
 			lock.unlock();
 		}	
-	}
-	
-	private class proceedRequest {
-		/*once the role requirement is fulfilled, the thread should proceed 
-		 * i.e. the request should no longer be available (remove from map requestsMade) */
 	}	
 }
