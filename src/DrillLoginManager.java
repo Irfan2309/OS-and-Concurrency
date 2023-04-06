@@ -134,6 +134,7 @@ public class DrillLoginManager implements Manager {
 								return(teamName);
 							}
 							
+							
 							//unblock a waiting worker
 							workerCondition.signal();
 							

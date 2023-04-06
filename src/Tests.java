@@ -13,7 +13,6 @@ public class Tests {
 	int  t1 = 50; //Sleep timeout 
 	
 	
-	
 
 	public void exampleTest_A(){
 		/*
