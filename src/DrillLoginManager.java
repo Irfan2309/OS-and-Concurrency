@@ -10,7 +10,6 @@ import java.util.concurrent.locks.Condition; //Note that the 'notifyAll' method 
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 
 
@@ -40,7 +39,9 @@ public class DrillLoginManager implements Manager {
 		lock.lock();
 		try {
 			//add the request to the map
-			requestsMade.put(null, team);
+			String teamName = "team" + (requestsMade.size() +1);
+			requestsMade.put(teamName, team);
+
 			//unblock a worker
 			workerCondition.signal();
 		}
@@ -71,78 +72,81 @@ public class DrillLoginManager implements Manager {
 		//lock protection
 		lock.lock();
 		try {
-			/* adding worker to the map
-			 * if the role is already in the map, update the count of workers for that role
-			 * else, create a key-value for that role and set count to 1 */
-			if (availableWorkers.containsKey(role)) {
-				int workerCount = availableWorkers.get(role);
-				availableWorkers.put(role, workerCount + 1);
-			}
-			else {
-				availableWorkers.put(role, 1);
-			}
+			/* adding worker to the map*/
+			loginWorker(role);
 			
 			/* check 2 possible scenarios: 
 			 * if the request contains the needed role 
-			 * if the request has already fulfilled the role requirement
-			 * 
-			 * if scenarios are positive, then add the worker to the team and remove them from availableWorkers	
+			 * if the request for the role requirement has already fulfilled
+			 * if scenarios are positive, then add the worker to the team
 			 * else use await. this will block the worker thread until a signal is called on it (use c.v. workerCondition)
 			 * */
 			while (true) {
 				
-				boolean canProceed = false;
-				String teamName = null;
-				Map<String, Integer> team = null;
-				//use a for loop to iterate through the requests
-				for (Map.Entry<String, Map<String, Integer>> iteration : requestsMade.entrySet()) {
-					
-					//store the current iterations team
-					String currTeamName = iteration.getKey();
-					Map<String, Integer> currTeam = iteration.getValue();
-					
-					//store the request information if the worker can be used for this team
-					if(currTeam.containsKey(role) && currTeam.get(role) > 0) {
-						teamName = currTeamName;
-						team = currTeam;
-						break;	
-					}
-				}
-				if (team != null) {
-					/* Add the worker to the team
-					 * decrement the number of workers needed for that role in the request
-					 * also remove the worker from available workers (similar decrement from role) */
-					team.put(role, team.get(role) - 1);
-					availableWorkers.put(role, availableWorkers.get(role) -1);
-					
-					//check if adding this worker completed the team request, if so, proceed the request (remove it)
-					for (int count : team.values()) {
-						if (count != 0) {
-							canProceed = false;
-						}
-						else {
-							canProceed = true;
-						}
-					}
-					if (canProceed) {
-						//getting the head of the map
-						String head = requestsMade.keySet().iterator().next();
-						requestsMade.remove(head);
-					}
-					//unblock a waiting worker
-					workerCondition.signal();
-					
-					//return the team name as per requirements
-					return teamName;
-				}
-				else {
-					//if the team is null make the worker wait
+				//checking if the linkedHashMap is empty before getting its head value
+				if(requestsMade.isEmpty()) {
 					workerCondition.awaitUninterruptibly();
 				}
-			}	
+				else {
+				 Map.Entry<String, Map<String, Integer>> head = requestsMade.entrySet().iterator().next();	
+				 Map<String, Integer> team = head.getValue();
+				 String teamName = head.getKey();
+							
+					if((team != null) && team.containsKey(role) &&  team.get(role) > 0) {
+						
+						/* Add the worker to the team */
+						addWorker(team, role);
+						//if the team has no worker requirement left, remove the team request
+						if (canProceed(team)) {
+							requestsMade.remove(teamName);
+						}
+						
+						//unblock a waiting worker
+						workerCondition.signal();
+						
+						//return the team name as per requirements
+						return teamName;
+					}
+					else {
+						//if the team is null make the worker wait
+						workerCondition.awaitUninterruptibly();	
+					}
+				}	
+			}
 		}
 		finally {
 			lock.unlock();
 		}	
-	}	
+	}
+	
+	//using helper functions to simplify workerLogin
+	
+	/* if the role is already in the map, update the count of workers for that role
+	 * else, create a key-value for that role and set count to 1 */
+	private void loginWorker(String role) {
+		if (availableWorkers.containsKey(role)) {
+			int workerCount = availableWorkers.get(role);
+			availableWorkers.put(role, workerCount + 1);
+		}
+		else {
+			availableWorkers.put(role, 1);
+		}
+	}
+	
+	/* decrement the number of workers needed for that role in the request
+	 * also remove the worker from available workers (similar decrement from role) */
+	private void addWorker(Map<String, Integer> team, String role) {
+		team.put(role, team.get(role) - 1);
+		availableWorkers.put(role, availableWorkers.get(role) -1);
+	}
+	
+	//checking if the team has any worker requirements left
+	private boolean canProceed(Map<String, Integer> team) {
+		for (int count : team.values()) {
+			if (count != 0) {
+				return false;
+			}
+		}
+		return true;
+	}
 }

@@ -71,9 +71,176 @@ public class Tests {
 	
 	
 	
+	public void test_UR2() {
+		System.out.println("Test_UR2");
+		AtomicInteger roustaboutReleases = new AtomicInteger(0);
+		AtomicInteger floorhandReleases = new AtomicInteger(0); 
+		DrillLoginManager drillLoginManager =  new DrillLoginManager();	
+		
+		class ExampleTestWorkerThread extends Thread {
+			public void run(){
+				drillLoginManager.workerLogin("Roustabout"); 
+				roustaboutReleases.incrementAndGet();
+			};	
+		};	
+		class ExampleTestWorkerThread1 extends Thread {
+			public void run(){
+				drillLoginManager.workerLogin("Floorhand"); 
+				floorhandReleases.incrementAndGet();
+			};	
+		};
+		
+		Map<String, Integer> team1 = new HashMap <String, Integer>();
+		team1.put("Roustabout", 3);
+		System.out.println("team1 = " + team1.toString());	
+		
+		Map<String, Integer> team2 = new HashMap <String, Integer>();
+		team2.put("Roustabout", 2);
+		team2.put("Floorhand", 3);
+		System.out.println("team2 = " + team2.toString());
+		
+		drillLoginManager.smallTeamRequest(team1);
+		drillLoginManager.smallTeamRequest(team2);
+		
+		try {Thread.sleep(t1);} catch (InterruptedException e) { e.printStackTrace();} 
+
+		
+		int nRoustabouts = 5;
+		int nFloorhands = 4;
+		for (int i=0; i < nRoustabouts; i++) (new ExampleTestWorkerThread()).start();
+		System.out.println(nRoustabouts + " Roustabout threads started");
+		
+		for (int i=0; i < nFloorhands; i++) (new ExampleTestWorkerThread1()).start();
+		System.out.println(nFloorhands + " Floorhand threads started");
+		
+		try {Thread.sleep(t1);} catch (InterruptedException e) { e.printStackTrace();} 
+		
+		System.out.println("Number of Roustabouts released by manager = " + roustaboutReleases.get());
+		System.out.println("Number of Floorhands released by manager = " + floorhandReleases.get());
+		
+		if (roustaboutReleases.get() == 5 && floorhandReleases.get() == 3) {
+			System.out.println("Hence: SUCCESS");
+		}	
+		else {
+			System.out.println("Hence: FAIL");
+		}
+	}
 	
+	public void test_UR3(){
+		System.out.println("Test_UR3");
+		AtomicInteger roustaboutReleases = new AtomicInteger(0);
+		AtomicInteger floorhandReleases = new AtomicInteger(0); 
+		DrillLoginManager drillLoginManager =  new DrillLoginManager();	
+		
+		class ExampleTestWorkerThread extends Thread {
+			public void run(){
+				drillLoginManager.workerLogin("Roustabout"); 
+				roustaboutReleases.incrementAndGet();
+			};	
+		};	
+		class ExampleTestWorkerThread1 extends Thread {
+			public void run(){
+				drillLoginManager.workerLogin("Floorhand"); 
+				floorhandReleases.incrementAndGet();
+			};	
+		};
+		
+		int nRoustabouts = 5;
+		int nFloorhands = 4;
+		
+		for (int i=0; i < nRoustabouts; i++) (new ExampleTestWorkerThread()).start();
+		System.out.println(nRoustabouts + " Roustabout threads started");
+				
+		for (int i=0; i < nFloorhands; i++) (new ExampleTestWorkerThread1()).start();
+		System.out.println(nFloorhands + " Floorhand threads started");
+		
+		try {Thread.sleep(t1);} catch (InterruptedException e) { e.printStackTrace();} 
+		
+		Map<String, Integer> team1 = new HashMap <String, Integer>();
+		team1.put("Roustabout", 3);
+		System.out.println("team1 = " + team1.toString());	
+		
+		Map<String, Integer> team2 = new HashMap <String, Integer>();
+		team2.put("Roustabout", 2);
+		team2.put("Floorhand", 3);
+		System.out.println("team2 = " + team2.toString());
+		
+		drillLoginManager.smallTeamRequest(team1);
+		drillLoginManager.smallTeamRequest(team2);
+		
+		try {Thread.sleep(t1);} catch (InterruptedException e) { e.printStackTrace();} 
+		
+		System.out.println("Number of Roustabouts released by manager = " + roustaboutReleases.get());
+		System.out.println("Number of Floorhands released by manager = " + floorhandReleases.get());
+		
+		if (roustaboutReleases.get() == 5 && floorhandReleases.get() == 3) {
+			System.out.println("Hence: SUCCESS");
+		}	
+		else {
+			System.out.println("Hence: FAIL");
+		}
+		
+	}
 	
-	
+	public void test_UR4() {
+		System.out.println("Test_UR4");
+		AtomicInteger roustaboutReleases = new AtomicInteger(0);
+		AtomicInteger floorhandReleases = new AtomicInteger(0); 
+		DrillLoginManager drillLoginManager =  new DrillLoginManager();	
+		
+		class ExampleTestWorkerThread extends Thread {
+			public void run(){
+				drillLoginManager.workerLogin("Roustabout"); 
+				roustaboutReleases.incrementAndGet();
+			};	
+		};	
+		class ExampleTestWorkerThread1 extends Thread {
+			public void run(){
+				drillLoginManager.workerLogin("Floorhand"); 
+				floorhandReleases.incrementAndGet();
+			};	
+		};
+		
+		int nRoustabouts = 5;
+		int nFloorhands = 4;
+		
+		Map<String, Integer> team1 = new HashMap <String, Integer>();
+		team1.put("Roustabout", 3);
+		System.out.println("team1 = " + team1.toString());	
+		
+		drillLoginManager.smallTeamRequest(team1);
+		
+		try {Thread.sleep(t1);} catch (InterruptedException e) { e.printStackTrace();} 
+		
+		Map<String, Integer> team2 = new HashMap <String, Integer>();
+		team2.put("Roustabout", 2);
+		team2.put("Floorhand", 3);
+		System.out.println("team2 = " + team2.toString());
+		
+
+		for (int i=0; i < nRoustabouts; i++) (new ExampleTestWorkerThread()).start();
+		System.out.println(nRoustabouts + " Roustabout threads started");
+				
+		for (int i=0; i < nFloorhands; i++) (new ExampleTestWorkerThread1()).start();
+		System.out.println(nFloorhands + " Floorhand threads started");
+		
+		try {Thread.sleep(t1);} catch (InterruptedException e) { e.printStackTrace();} 
+		
+		drillLoginManager.smallTeamRequest(team2);
+		
+		try {Thread.sleep(t1);} catch (InterruptedException e) { e.printStackTrace();} 
+		
+		System.out.println("Number of Roustabouts released by manager = " + roustaboutReleases.get());
+		System.out.println("Number of Floorhands released by manager = " + floorhandReleases.get());
+		
+		if (roustaboutReleases.get() == 5 && floorhandReleases.get() == 3) {
+			System.out.println("Hence: SUCCESS");
+		}	
+		else {
+			System.out.println("Hence: FAIL");
+		}
+	}
+
 	
 	
 	public void exampleTest_B (){
