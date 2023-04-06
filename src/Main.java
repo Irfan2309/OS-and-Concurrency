@@ -10,7 +10,9 @@ public class Main {
 		exampleTests.test_UR2();
 		exampleTests.test_UR3();
 		exampleTests.test_UR4();
-//		exampleTests.test_UR5();
+		exampleTests.test_UR5();
+		exampleTests.testUR6();
+
 	}
 
 }

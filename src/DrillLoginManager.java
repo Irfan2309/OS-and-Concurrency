@@ -8,7 +8,6 @@ import java.util.concurrent.locks.Condition; //Note that the 'notifyAll' method 
 //or any delays or 'busy waiting' (spin lock) methods.
 //However, you may import non-tread safe classes e.g.:
 import java.util.Map;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
@@ -23,6 +22,12 @@ public class DrillLoginManager implements Manager {
 	//adding a condition variable to block workers until a team request needs the worker
 	private final Condition workerCondition = lock.newCondition();
 	
+	//adding a condition variable to block driller
+	private final Condition drillerConditon = lock.newCondition();
+	
+	//adding a condition variable to check if the request is fulfilled or not
+	private final Condition isFulfilled = lock.newCondition();
+	
 	/* making a map that will store all the team that makes the request and their worker requirements 
 	 * the map stores the team name as the key and the value is another map that stores the worker role and the number of workers 
 	 * Using LinkedHashMap to have an order in which the requests enter the map. (so we can use FIFO) */
@@ -31,6 +36,12 @@ public class DrillLoginManager implements Manager {
 	/* storing all the workers that log-in in a map. 
 	 * storing the role along with the number of workers that are logged in and ready to work*/
 	private final HashMap<String, Integer> availableWorkers = new HashMap<>();
+	
+	//checking if the request put forth is by a drillerTeam or not 
+	private boolean byDriller = false;
+	
+	//keeps a track of all workers that log-in
+	private Integer workerCount = 0;
 		
 	@Override
 	public void smallTeamRequest(Map<String, Integer> team) {
@@ -41,9 +52,9 @@ public class DrillLoginManager implements Manager {
 			//add the request to the map
 			String teamName = "team" + (requestsMade.size() +1);
 			requestsMade.put(teamName, team);
-
-			//unblock a worker
-			workerCondition.signal();
+			
+			//unblock worker
+			callSignal(team);
 		}
 		finally {
 			lock.unlock();
@@ -56,10 +67,22 @@ public class DrillLoginManager implements Manager {
 		//lock protection
 		lock.lock();
 		try {
+			
+			//setting the variable true because request is by driller team
+			byDriller = true;
+			
 			//add the request to the map
 			requestsMade.put(teamName, team);
-			//unblock a worker
-			workerCondition.signal();
+			
+			//remove the driller from the request and process the rest as normal
+			for (Map.Entry<String, Map<String, Integer>> requests : requestsMade.entrySet()) {
+				requests.getValue().remove("Driller");
+			}			
+			//unblock worker
+			callSignal(team);
+			
+			//await the driller
+			drillerConditon.awaitUninterruptibly();
 		}
 		finally {
 			lock.unlock();
@@ -75,7 +98,8 @@ public class DrillLoginManager implements Manager {
 			/* adding worker to the map*/
 			loginWorker(role);
 			
-			/* check 2 possible scenarios: 
+			/* check possible scenarios: 
+			 * if the team in the request is null
 			 * if the request contains the needed role 
 			 * if the request for the role requirement has already fulfilled
 			 * if scenarios are positive, then add the worker to the team
@@ -94,26 +118,38 @@ public class DrillLoginManager implements Manager {
 							
 					if((team != null) && team.containsKey(role) &&  team.get(role) > 0) {
 						
-						/* Add the worker to the team */
-						addWorker(team, role);
-						//if the team has no worker requirement left, remove the team request
-						if (canProceed(team)) {
-							requestsMade.remove(teamName);
+				
+							/* Add the worker to the team */
+							addWorker(team, role);
+							
+							//if the team has no worker requirement left, remove the team request
+							if (canProceed(team)) {
+								
+								//if the request was by a drillerTeam, unblock the driller
+								if(byDriller) {
+									drillerConditon.signal();
+								}
+								
+								requestsMade.remove(teamName);
+								return(teamName);
+							}
+							
+							//unblock a waiting worker
+							workerCondition.signal();
+							
+							
+							//block until the request can be processed
+							isFulfilled.awaitUninterruptibly();
+							//return the team name as per requirements
+							return teamName;
 						}
-						
-						//unblock a waiting worker
-						workerCondition.signal();
-						
-						//return the team name as per requirements
-						return teamName;
+						else {
+							workerCondition.awaitUninterruptibly();	
+						}
 					}
-					else {
-						//if the team is null make the worker wait
-						workerCondition.awaitUninterruptibly();	
-					}
-				}	
+				}
 			}
-		}
+		
 		finally {
 			lock.unlock();
 		}	
@@ -131,6 +167,7 @@ public class DrillLoginManager implements Manager {
 		else {
 			availableWorkers.put(role, 1);
 		}
+		workerCount ++;
 	}
 	
 	/* decrement the number of workers needed for that role in the request
@@ -140,12 +177,31 @@ public class DrillLoginManager implements Manager {
 		availableWorkers.put(role, availableWorkers.get(role) -1);
 	}
 	
+	private void callSignal(Map<String, Integer> request) {
+		int requestCount = 0;
+		
+		 for (Map.Entry<String, Integer> roles : request.entrySet()) {
+			 int currCount = roles.getValue();
+			 requestCount += currCount;
+		 }
+
+		for (int i = 0; i < requestCount; i++)
+		{
+			workerCondition.signal();
+		}
+	}
+	
 	//checking if the team has any worker requirements left
 	private boolean canProceed(Map<String, Integer> team) {
 		for (int count : team.values()) {
 			if (count != 0) {
 				return false;
 			}
+		}
+		for(int i = 0; i < workerCount; i++){
+			
+		//signal that the request can be processed
+		isFulfilled.signal();
 		}
 		return true;
 	}
